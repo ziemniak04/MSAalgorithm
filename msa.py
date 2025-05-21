@@ -7,40 +7,59 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+
 class Sequence:
     """Class to represent a biological sequence."""
 
     def __init__(self, identifier: str, sequence: str):
-        """
-                Initialize a Sequence object with an identifier and sequence string.
+        """Initialize a Sequence object.
 
-                Args:
-                    id (str): Unique identifier for the sequence.
-                    sequence (str): The biological sequence (e.g., DNA, RNA, or protein) as a string.
-                """
+        Args:
+            identifier: The identifier of the sequence (e.g., from a FASTA header).
+            sequence: The biological sequence string (e.g., DNA, RNA, protein).
+        """
         self.identifier = identifier
         self.sequence = sequence.upper()
 
     def __str__(self) -> str:
+        """Return the FASTA formatted string representation of the sequence."""
         return f">{self.identifier}\n{self.sequence}"
 
     def __len__(self) -> int:
+        """Return the length of the sequence string."""
         return len(self.sequence)
 
 
 class PairwiseAlignment:
     """Class to perform pairwise sequence alignment using Needleman-Wunsch algorithm."""
 
-    def __init__(self, match_score: int = 1, mismatch_score: int = -1, gap_penalty: int = -2):
+    def __init__(
+        self, match_score: int = 1, mismatch_score: int = -1, gap_penalty: int = -2
+    ):
+        """Initialize the PairwiseAlignment object with scoring parameters.
+
+        Args:
+            match_score: Score for matching characters.
+            mismatch_score: Score for mismatching characters.
+            gap_penalty: Penalty for introducing a gap.
+        """
         self.match_score = match_score
         self.mismatch_score = mismatch_score
         self.gap_penalty = gap_penalty
 
     def score(self, a: str, b: str) -> int:
-        """Calculate score for two characters."""
+        """Calculate score for two characters.
+
+        Args:
+            a: The first character.
+            b: The second character.
+
+        Returns:
+            The score based on whether they match, mismatch, or involve a gap.
+        """
         if a == b:
             return self.match_score
-        elif a == '-' or b == '-':
+        elif a == "-" or b == "-":
             return self.gap_penalty
         else:
             return self.mismatch_score
@@ -65,7 +84,9 @@ class PairwiseAlignment:
         # Fill the matrices
         for i in range(1, n + 1):
             for j in range(1, m + 1):
-                match = score_matrix[i - 1, j - 1] + self.score(seq1[i - 1], seq2[j - 1])
+                match = score_matrix[i - 1, j - 1] + self.score(
+                    seq1[i - 1], seq2[j - 1]
+                )
                 delete = score_matrix[i - 1, j] + self.gap_penalty
                 insert = score_matrix[i, j - 1] + self.gap_penalty
 
@@ -93,16 +114,16 @@ class PairwiseAlignment:
                 j -= 1
             elif i > 0 and traceback[i, j] == 1:  # Up
                 align1.append(seq1[i - 1])
-                align2.append('-')
+                align2.append("-")
                 i -= 1
             else:  # Left
-                align1.append('-')
+                align1.append("-")
                 align2.append(seq2[j - 1])
                 j -= 1
 
         # Reverse the alignments
-        align1 = ''.join(reversed(align1))
-        align2 = ''.join(reversed(align2))
+        align1 = "".join(reversed(align1))
+        align2 = "".join(reversed(align2))
 
         # Return the aligned sequences and the alignment score
         return align1, align2, score_matrix[n, m]
@@ -114,7 +135,7 @@ class PairwiseAlignment:
         gaps = 0
 
         for i in range(len(aligned_seq1)):
-            if aligned_seq1[i] == '-' or aligned_seq2[i] == '-':
+            if aligned_seq1[i] == "-" or aligned_seq2[i] == "-":
                 gaps += 1
             elif aligned_seq1[i] == aligned_seq2[i]:
                 matches += 1
@@ -125,18 +146,29 @@ class PairwiseAlignment:
         identity = matches / len(aligned_seq1) * 100 if len(aligned_seq1) > 0 else 0
 
         return {
-            'matches': matches,
-            'mismatches': mismatches,
-            'gaps': gaps,
-            'identity': identity
+            "matches": matches,
+            "mismatches": mismatches,
+            "gaps": gaps,
+            "identity": identity,
         }
 
 
 class MultipleSequenceAlignment:
     """Class to perform multiple sequence alignment using the center star method."""
 
-    def __init__(self, match_score: int = 1, mismatch_score: int = -1, gap_penalty: int = -2):
-        self.pairwise_aligner = PairwiseAlignment(match_score, mismatch_score, gap_penalty)
+    def __init__(
+        self, match_score: int = 1, mismatch_score: int = -1, gap_penalty: int = -2
+    ):
+        """Initialize the MultipleSequenceAlignment object.
+
+        Args:
+            match_score: Score for matching characters in pairwise alignments.
+            mismatch_score: Score for mismatching characters in pairwise alignments.
+            gap_penalty: Penalty for gaps in pairwise alignments.
+        """
+        self.pairwise_aligner = PairwiseAlignment(
+            match_score, mismatch_score, gap_penalty
+        )
         self.match_score = match_score
         self.mismatch_score = mismatch_score
         self.gap_penalty = gap_penalty
@@ -149,7 +181,9 @@ class MultipleSequenceAlignment:
         for i in range(n):
             for j in range(n):
                 if i != j:
-                    _, _, score = self.pairwise_aligner.align(sequences[i].sequence, sequences[j].sequence)
+                    _, _, score = self.pairwise_aligner.align(
+                        sequences[i].sequence, sequences[j].sequence
+                    )
                     sum_scores[i] += score
 
         # Return the index of the sequence with the highest sum of scores
@@ -170,17 +204,20 @@ class MultipleSequenceAlignment:
         # Process each alignment with the center
         for _, aligned_other in center_alignments:
             # Create a new sequence that will be added to the MSA
-            new_seq = list('-' * len(center_seq))
+            new_seq = list("-" * len(center_seq))
 
             # Map the aligned_other to the center sequence positions
             center_pos = 0
             for i, char in enumerate(center_seq):
-                if char != '-':  # Not a gap in center
-                    if center_pos < len(aligned_other) and aligned_other[center_pos] != '-':
+                if char != "-":  # Not a gap in center
+                    if (
+                        center_pos < len(aligned_other)
+                        and aligned_other[center_pos] != "-"
+                    ):
                         new_seq[i] = aligned_other[center_pos]
                     center_pos += 1
 
-            msa.append(''.join(new_seq))
+            msa.append("".join(new_seq))
 
         return msa
 
@@ -197,11 +234,15 @@ class MultipleSequenceAlignment:
         center_alignments = []
         for i, seq in enumerate(sequences):
             if i != center_idx:
-                aligned_center, aligned_other = self.align_to_center(center_sequence.sequence, seq.sequence)
+                aligned_center, aligned_other = self.align_to_center(
+                    center_sequence.sequence, seq.sequence
+                )
                 center_alignments.append((aligned_center, aligned_other))
 
         # Insert the self-alignment of the center sequence for consistency
-        center_alignments.insert(center_idx, (center_sequence.sequence, center_sequence.sequence))
+        center_alignments.insert(
+            center_idx, (center_sequence.sequence, center_sequence.sequence)
+        )
 
         # Merge all alignments
         aligned_sequences = self.merge_alignments(center_alignments)
@@ -230,23 +271,27 @@ class MultipleSequenceAlignment:
                 stats = self.pairwise_aligner.calculate_stats(
                     aligned_sequences[i], aligned_sequences[j]
                 )
-                total_pairwise_matches += stats['matches']
-                total_pairwise_mismatches += stats['mismatches']
-                total_pairwise_gaps += stats['gaps']
+                total_pairwise_matches += stats["matches"]
+                total_pairwise_mismatches += stats["mismatches"]
+                total_pairwise_gaps += stats["gaps"]
                 total_comparisons += 1
 
         # Calculate average identity across all pairs
         avg_identity = 0
         if total_comparisons > 0:
             total_positions = alignment_length * total_comparisons
-            avg_identity = total_pairwise_matches / total_positions * 100 if total_positions > 0 else 0
+            avg_identity = (
+                total_pairwise_matches / total_positions * 100
+                if total_positions > 0
+                else 0
+            )
 
         return {
-            'avg_identity': avg_identity,
-            'total_matches': total_pairwise_matches,
-            'total_mismatches': total_pairwise_mismatches,
-            'total_gaps': total_pairwise_gaps,
-            'alignment_length': alignment_length
+            "avg_identity": avg_identity,
+            "total_matches": total_pairwise_matches,
+            "total_mismatches": total_pairwise_mismatches,
+            "total_gaps": total_pairwise_gaps,
+            "alignment_length": alignment_length,
         }
 
 
@@ -260,16 +305,16 @@ class FASTAParser:
         current_id = ""
         current_seq = []
 
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             for line in file:
                 line = line.strip()
                 if not line:
                     continue
 
-                if line.startswith('>'):
+                if line.startswith(">"):
                     # Save the previous sequence if there is one
                     if current_id and current_seq:
-                        sequences.append(Sequence(current_id, ''.join(current_seq)))
+                        sequences.append(Sequence(current_id, "".join(current_seq)))
 
                     # Start a new sequence
                     current_id = line[1:]  # Remove the '>' character
@@ -280,14 +325,14 @@ class FASTAParser:
 
         # Add the last sequence
         if current_id and current_seq:
-            sequences.append(Sequence(current_id, ''.join(current_seq)))
+            sequences.append(Sequence(current_id, "".join(current_seq)))
 
         return sequences
 
     @staticmethod
     def write_fasta(sequences: List[Sequence], file_path: str) -> None:
         """Write sequences to a FASTA file."""
-        with open(file_path, 'w') as file:
+        with open(file_path, "w") as file:
             for seq in sequences:
                 file.write(f">{seq.identifier}\n")
                 file.write(f"{seq.sequence}\n")
@@ -297,10 +342,15 @@ class MSAOutputWriter:
     """Class to write MSA output to a file."""
 
     @staticmethod
-    def write_alignment(aligned_sequences: List[str], original_sequences: List[Sequence],
-                        stats: Dict, params: Dict, file_path: str) -> None:
+    def write_alignment(
+        aligned_sequences: List[str],
+        original_sequences: List[Sequence],
+        stats: Dict,
+        params: Dict,
+        file_path: str,
+    ) -> None:
         """Write alignment and statistics to a file."""
-        with open(file_path, 'w') as file:
+        with open(file_path, "w") as file:
             # Write parameters
             file.write("MULTIPLE SEQUENCE ALIGNMENT - CENTER STAR METHOD\n")
             file.write("=" * 50 + "\n\n")
@@ -311,7 +361,9 @@ class MSAOutputWriter:
 
             # Write alignment
             file.write("Alignment:\n")
-            for i, (seq, orig_seq) in enumerate(zip(aligned_sequences, original_sequences)):
+            for i, (seq, orig_seq) in enumerate(
+                zip(aligned_sequences, original_sequences)
+            ):
                 file.write(f">{orig_seq.identifier}\n")
                 file.write(f"{seq}\n")
             file.write("\n")
@@ -329,6 +381,7 @@ class ConsoleInterface:
     """Console interface for the MSA program."""
 
     def __init__(self):
+        """Initialize the ConsoleInterface with default values for sequences and scoring."""
         self.sequences = []
         self.match_score = 1
         self.mismatch_score = -1
@@ -338,7 +391,9 @@ class ConsoleInterface:
         """Get scoring parameters from user input."""
         try:
             self.match_score = int(input("Enter match score (default 1): ") or "1")
-            self.mismatch_score = int(input("Enter mismatch score (default -1): ") or "-1")
+            self.mismatch_score = int(
+                input("Enter mismatch score (default -1): ") or "-1"
+            )
             self.gap_penalty = int(input("Enter gap penalty (default -2): ") or "-2")
         except ValueError:
             print("Invalid input. Using default values.")
@@ -387,7 +442,9 @@ class ConsoleInterface:
         self.get_param_input()
 
         # Perform MSA
-        msa = MultipleSequenceAlignment(self.match_score, self.mismatch_score, self.gap_penalty)
+        msa = MultipleSequenceAlignment(
+            self.match_score, self.mismatch_score, self.gap_penalty
+        )
         aligned_sequences, stats = msa.align(self.sequences)
 
         # Display results
@@ -405,14 +462,16 @@ class ConsoleInterface:
 
         # Save to file
         save_option = input("\nDo you want to save the alignment to a file? (y/n): ")
-        if save_option.lower() == 'y':
+        if save_option.lower() == "y":
             output_file = input("Enter output file path: ")
             params = {
-                'match_score': self.match_score,
-                'mismatch_score': self.mismatch_score,
-                'gap_penalty': self.gap_penalty
+                "match_score": self.match_score,
+                "mismatch_score": self.mismatch_score,
+                "gap_penalty": self.gap_penalty,
             }
-            MSAOutputWriter.write_alignment(aligned_sequences, self.sequences, stats, params, output_file)
+            MSAOutputWriter.write_alignment(
+                aligned_sequences, self.sequences, stats, params, output_file
+            )
             print(f"Alignment saved to {output_file}")
 
 
@@ -420,6 +479,7 @@ class GUI(tk.Tk):
     """GUI for the MSA program."""
 
     def __init__(self):
+        """Initialize the main GUI window and its components."""
         super().__init__()
 
         self.title("Multiple Sequence Alignment - Center Star Method")
@@ -443,28 +503,45 @@ class GUI(tk.Tk):
         input_frame.pack(fill=tk.X, pady=5)
 
         # Buttons for input
-        ttk.Button(input_frame, text="Load FASTA File", command=self.load_fasta).pack(side=tk.LEFT, padx=5)
-        ttk.Button(input_frame, text="Enter Sequences Manually", command=self.show_manual_input).pack(side=tk.LEFT,
-                                                                                                      padx=5)
+        ttk.Button(input_frame, text="Load FASTA File", command=self.load_fasta).pack(
+            side=tk.LEFT, padx=5
+        )
+        ttk.Button(
+            input_frame, text="Enter Sequences Manually", command=self.show_manual_input
+        ).pack(side=tk.LEFT, padx=5)
 
         # Parameters frame
-        param_frame = ttk.LabelFrame(main_frame, text="Scoring Parameters", padding="10")
+        param_frame = ttk.LabelFrame(
+            main_frame, text="Scoring Parameters", padding="10"
+        )
         param_frame.pack(fill=tk.X, pady=5)
 
         # Match score
-        ttk.Label(param_frame, text="Match Score:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(param_frame, text="Match Score:").grid(
+            row=0, column=0, padx=5, pady=5, sticky=tk.W
+        )
         self.match_var = tk.StringVar(value="1")
-        ttk.Entry(param_frame, textvariable=self.match_var, width=5).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Entry(param_frame, textvariable=self.match_var, width=5).grid(
+            row=0, column=1, padx=5, pady=5
+        )
 
         # Mismatch score
-        ttk.Label(param_frame, text="Mismatch Score:").grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(param_frame, text="Mismatch Score:").grid(
+            row=0, column=2, padx=5, pady=5, sticky=tk.W
+        )
         self.mismatch_var = tk.StringVar(value="-1")
-        ttk.Entry(param_frame, textvariable=self.mismatch_var, width=5).grid(row=0, column=3, padx=5, pady=5)
+        ttk.Entry(param_frame, textvariable=self.mismatch_var, width=5).grid(
+            row=0, column=3, padx=5, pady=5
+        )
 
         # Gap penalty
-        ttk.Label(param_frame, text="Gap Penalty:").grid(row=0, column=4, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(param_frame, text="Gap Penalty:").grid(
+            row=0, column=4, padx=5, pady=5, sticky=tk.W
+        )
         self.gap_var = tk.StringVar(value="-2")
-        ttk.Entry(param_frame, textvariable=self.gap_var, width=5).grid(row=0, column=5, padx=5, pady=5)
+        ttk.Entry(param_frame, textvariable=self.gap_var, width=5).grid(
+            row=0, column=5, padx=5, pady=5
+        )
 
         # Sequence display frame
         seq_frame = ttk.LabelFrame(main_frame, text="Sequences", padding="10")
@@ -475,11 +552,15 @@ class GUI(tk.Tk):
         self.seq_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Scrollbar for sequences
-        seq_scrolly = ttk.Scrollbar(seq_frame, orient=tk.VERTICAL, command=self.seq_text.yview)
+        seq_scrolly = ttk.Scrollbar(
+            seq_frame, orient=tk.VERTICAL, command=self.seq_text.yview
+        )
         seq_scrolly.pack(side=tk.RIGHT, fill=tk.Y)
         self.seq_text.config(yscrollcommand=seq_scrolly.set)
 
-        seq_scrollx = ttk.Scrollbar(seq_frame, orient=tk.HORIZONTAL, command=self.seq_text.xview)
+        seq_scrollx = ttk.Scrollbar(
+            seq_frame, orient=tk.HORIZONTAL, command=self.seq_text.xview
+        )
         seq_scrollx.pack(side=tk.BOTTOM, fill=tk.X)
         self.seq_text.config(xscrollcommand=seq_scrollx.set)
 
@@ -487,12 +568,20 @@ class GUI(tk.Tk):
         action_frame = ttk.Frame(main_frame)
         action_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(action_frame, text="Run Alignment", command=self.run_alignment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Save Results", command=self.save_results).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Clear All", command=self.clear_all).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Run Alignment", command=self.run_alignment).pack(
+            side=tk.LEFT, padx=5
+        )
+        ttk.Button(action_frame, text="Save Results", command=self.save_results).pack(
+            side=tk.LEFT, padx=5
+        )
+        ttk.Button(action_frame, text="Clear All", command=self.clear_all).pack(
+            side=tk.LEFT, padx=5
+        )
 
         # Results frame
-        results_frame = ttk.LabelFrame(main_frame, text="Alignment Results", padding="10")
+        results_frame = ttk.LabelFrame(
+            main_frame, text="Alignment Results", padding="10"
+        )
         results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         # Notebook for results display
@@ -508,11 +597,15 @@ class GUI(tk.Tk):
         self.results_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Scrollbar for results
-        results_scrolly = ttk.Scrollbar(text_tab, orient=tk.VERTICAL, command=self.results_text.yview)
+        results_scrolly = ttk.Scrollbar(
+            text_tab, orient=tk.VERTICAL, command=self.results_text.yview
+        )
         results_scrolly.pack(side=tk.RIGHT, fill=tk.Y)
         self.results_text.config(yscrollcommand=results_scrolly.set)
 
-        results_scrollx = ttk.Scrollbar(text_tab, orient=tk.HORIZONTAL, command=self.results_text.xview)
+        results_scrollx = ttk.Scrollbar(
+            text_tab, orient=tk.HORIZONTAL, command=self.results_text.xview
+        )
         results_scrollx.pack(side=tk.BOTTOM, fill=tk.X)
         self.results_text.config(xscrollcommand=results_scrollx.set)
 
@@ -526,7 +619,9 @@ class GUI(tk.Tk):
 
         # Status bar
         self.status_var = tk.StringVar()
-        status_bar = ttk.Label(main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+        status_bar = ttk.Label(
+            main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W
+        )
         status_bar.pack(fill=tk.X, side=tk.BOTTOM)
 
         self.status_var.set("Ready")
@@ -535,7 +630,10 @@ class GUI(tk.Tk):
         """Load sequences from a FASTA file."""
         file_path = filedialog.askopenfilename(
             title="Select FASTA File",
-            filetypes=[("FASTA files", "*.fasta *.fa *.fna *.ffn *.faa *.frn"), ("All files", "*.*")]
+            filetypes=[
+                ("FASTA files", "*.fasta *.fa *.fna *.ffn *.faa *.frn"),
+                ("All files", "*.*"),
+            ],
         )
 
         if not file_path:
@@ -574,6 +672,11 @@ ACGTACGTAGGT"""
         text.insert(tk.END, placeholder)
 
         def submit():
+            """Parse sequences from the text input, update GUI state, and close the dialog.
+
+            Reads text in FASTA-like format from the input field, creates Sequence objects,
+            updates the main GUI's sequence list, displays them, and updates the status bar.
+            """
             fasta_text = text.get("1.0", tk.END)
 
             # Parse sequences from text
@@ -586,10 +689,12 @@ ACGTACGTAGGT"""
                 if not line:
                     continue
 
-                if line.startswith('>'):
+                if line.startswith(">"):
                     # Save the previous sequence if there is one
                     if current_id and current_seq:
-                        self.sequences.append(Sequence(current_id, ''.join(current_seq)))
+                        self.sequences.append(
+                            Sequence(current_id, "".join(current_seq))
+                        )
 
                     # Start a new sequence
                     current_id = line[1:]  # Remove the '>' character
@@ -600,7 +705,7 @@ ACGTACGTAGGT"""
 
             # Add the last sequence
             if current_id and current_seq:
-                self.sequences.append(Sequence(current_id, ''.join(current_seq)))
+                self.sequences.append(Sequence(current_id, "".join(current_seq)))
 
             self.display_sequences()
             self.status_var.set(f"Added {len(self.sequences)} sequences.")
@@ -609,8 +714,12 @@ ACGTACGTAGGT"""
         button_frame = ttk.Frame(frame)
         button_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(button_frame, text="Submit", command=submit).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text="Submit", command=submit).pack(
+            side=tk.RIGHT, padx=5
+        )
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(
+            side=tk.RIGHT, padx=5
+        )
 
     def display_sequences(self):
         """Display loaded sequences in the text widget."""
@@ -622,7 +731,9 @@ ACGTACGTAGGT"""
     def run_alignment(self):
         """Run the MSA algorithm."""
         if not self.sequences:
-            messagebox.showwarning("No Sequences", "Please load or enter sequences first.")
+            messagebox.showwarning(
+                "No Sequences", "Please load or enter sequences first."
+            )
             return
 
         try:
@@ -630,7 +741,9 @@ ACGTACGTAGGT"""
             mismatch_score = int(self.mismatch_var.get())
             gap_penalty = int(self.gap_var.get())
         except ValueError:
-            messagebox.showerror("Invalid Parameters", "Please enter valid scoring parameters.")
+            messagebox.showerror(
+                "Invalid Parameters", "Please enter valid scoring parameters."
+            )
             return
 
         # Perform MSA
@@ -651,7 +764,9 @@ ACGTACGTAGGT"""
         self.results_text.delete("1.0", tk.END)
 
         # Display parameters
-        self.results_text.insert(tk.END, "MULTIPLE SEQUENCE ALIGNMENT - CENTER STAR METHOD\n")
+        self.results_text.insert(
+            tk.END, "MULTIPLE SEQUENCE ALIGNMENT - CENTER STAR METHOD\n"
+        )
         self.results_text.insert(tk.END, "=" * 50 + "\n\n")
 
         self.results_text.insert(tk.END, "Parameters:\n")
@@ -669,14 +784,27 @@ ACGTACGTAGGT"""
 
         # Display statistics
         self.results_text.insert(tk.END, "Statistics:\n")
-        self.results_text.insert(tk.END, f"Average identity: {self.stats['avg_identity']:.2f}%\n")
-        self.results_text.insert(tk.END, f"Total matches: {self.stats['total_matches']}\n")
-        self.results_text.insert(tk.END, f"Total mismatches: {self.stats['total_mismatches']}\n")
+        self.results_text.insert(
+            tk.END, f"Average identity: {self.stats['avg_identity']:.2f}%\n"
+        )
+        self.results_text.insert(
+            tk.END, f"Total matches: {self.stats['total_matches']}\n"
+        )
+        self.results_text.insert(
+            tk.END, f"Total mismatches: {self.stats['total_mismatches']}\n"
+        )
         self.results_text.insert(tk.END, f"Total gaps: {self.stats['total_gaps']}\n")
-        self.results_text.insert(tk.END, f"Alignment length: {self.stats['alignment_length']}\n")
+        self.results_text.insert(
+            tk.END, f"Alignment length: {self.stats['alignment_length']}\n"
+        )
 
     def create_visualization(self):
-        """Create visual representation of the alignment."""
+        """Create and display a visual representation of the alignment results.
+
+        This method is intended to render the multiple sequence alignment visually,
+        for example, using a library like Matplotlib within the 'Visual View' tab.
+        (Currently, this method may be a placeholder or requires full implementation).
+        """
         # Clear previous figure
         for widget in self.figure_frame.winfo_children():
             widget.destroy()
@@ -690,16 +818,16 @@ ACGTACGTAGGT"""
 
         # Set up the sequence colors and symbols
         seq_colors = {
-            'A': '#00CC00',  # Green
-            'C': '#0000CC',  # Blue
-            'G': '#FFB300',  # Orange
-            'T': '#CC0000',  # Red
-            'U': '#CC0000',  # Red (same as T)
-            '-': '#FFFFFF',  # White (gap)
+            "A": "#00CC00",  # Green
+            "C": "#0000CC",  # Blue
+            "G": "#FFB300",  # Orange
+            "T": "#CC0000",  # Red
+            "U": "#CC0000",  # Red (same as T)
+            "-": "#FFFFFF",  # White (gap)
         }
 
         # Default color for unknown residues
-        default_color = '#AAAAAA'  # Gray
+        default_color = "#AAAAAA"  # Gray
 
         # Calculate alignment length
         align_len = len(self.aligned_sequences[0])
@@ -722,7 +850,7 @@ ACGTACGTAGGT"""
                 color_array[i, j] = [r, g, b]
 
         # Display the alignment as an image
-        ax.imshow(color_array, aspect='auto', interpolation='nearest')
+        ax.imshow(color_array, aspect="auto", interpolation="nearest")
 
         # Set y-ticks to sequence identifiers
         ax.set_yticks(range(num_seqs))
@@ -736,23 +864,33 @@ ACGTACGTAGGT"""
         # Add grid lines
         ax.set_xticks(np.arange(-0.5, align_len, 1), minor=True)
         ax.set_yticks(np.arange(-0.5, num_seqs, 1), minor=True)
-        ax.grid(which='minor', color='black', linestyle='-', linewidth=0.5, alpha=0.2)
+        ax.grid(which="minor", color="black", linestyle="-", linewidth=0.5, alpha=0.2)
 
         # Add title and labels
-        ax.set_title('Multiple Sequence Alignment')
-        ax.set_xlabel('Position')
-        ax.set_ylabel('Sequence')
+        ax.set_title("Multiple Sequence Alignment")
+        ax.set_xlabel("Position")
+        ax.set_ylabel("Sequence")
 
         # Create a legend for nucleotide/amino acid colors
         legend_elements = []
         for char, color in seq_colors.items():
-            if char == '-':
-                legend_elements.append(plt.Rectangle((0, 0), 1, 1, color=color, label=f'Gap ({char})'))
+            if char == "-":
+                legend_elements.append(
+                    plt.Rectangle((0, 0), 1, 1, color=color, label=f"Gap ({char})")
+                )
             else:
-                legend_elements.append(plt.Rectangle((0, 0), 1, 1, color=color, label=char))
+                legend_elements.append(
+                    plt.Rectangle((0, 0), 1, 1, color=color, label=char)
+                )
 
-        ax.legend(handles=legend_elements, loc='upper center', bbox_to_anchor=(0.5, -0.15),
-                  fancybox=True, shadow=True, ncol=len(seq_colors))
+        ax.legend(
+            handles=legend_elements,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.15),
+            fancybox=True,
+            shadow=True,
+            ncol=len(seq_colors),
+        )
 
         # Adjust layout
         fig.tight_layout()
@@ -771,7 +909,7 @@ ACGTACGTAGGT"""
         file_path = filedialog.asksaveasfilename(
             title="Save Alignment Results",
             defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
         )
 
         if not file_path:
@@ -779,12 +917,13 @@ ACGTACGTAGGT"""
 
         try:
             params = {
-                'match_score': int(self.match_var.get()),
-                'mismatch_score': int(self.mismatch_var.get()),
-                'gap_penalty': int(self.gap_var.get())
+                "match_score": int(self.match_var.get()),
+                "mismatch_score": int(self.mismatch_var.get()),
+                "gap_penalty": int(self.gap_var.get()),
             }
-            MSAOutputWriter.write_alignment(self.aligned_sequences, self.sequences,
-                                            self.stats, params, file_path)
+            MSAOutputWriter.write_alignment(
+                self.aligned_sequences, self.sequences, self.stats, params, file_path
+            )
             self.status_var.set(f"Results saved to {file_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save results: {e}")
@@ -806,8 +945,12 @@ ACGTACGTAGGT"""
 
 def main():
     """Main function to run the MSA program."""
-    parser = argparse.ArgumentParser(description="Multiple Sequence Alignment - Center Star Method")
-    parser.add_argument("--gui", action="store_true", help="Run with graphical user interface")
+    parser = argparse.ArgumentParser(
+        description="Multiple Sequence Alignment - Center Star Method"
+    )
+    parser.add_argument(
+        "--gui", action="store_true", help="Run with graphical user interface"
+    )
     parser.add_argument("--fasta", type=str, help="Input FASTA file path")
     parser.add_argument("--output", type=str, help="Output file path")
     parser.add_argument("--match", type=int, default=1, help="Match score")
@@ -830,16 +973,19 @@ def main():
                 # Display or save results
                 if args.output:
                     params = {
-                        'match_score': args.match,
-                        'mismatch_score': args.mismatch,
-                        'gap_penalty': args.gap
+                        "match_score": args.match,
+                        "mismatch_score": args.mismatch,
+                        "gap_penalty": args.gap,
                     }
-                    MSAOutputWriter.write_alignment(aligned_sequences, sequences, stats, params, args.output)
+                    MSAOutputWriter.write_alignment(
+                        aligned_sequences, sequences, stats, params, args.output
+                    )
                     print(f"Results saved to {args.output}")
                 else:
-                    # Print to console
                     print("\nAlignment:")
-                    for i, (seq, aligned) in enumerate(zip(sequences, aligned_sequences)):
+                    for i, (seq, aligned) in enumerate(
+                        zip(sequences, aligned_sequences)
+                    ):
                         print(f">{seq.identifier}")
                         print(aligned)
 
@@ -852,7 +998,6 @@ def main():
             except Exception as e:
                 print(f"Error: {e}")
         else:
-            # Run interactive console interface
             console = ConsoleInterface()
             console.run()
 
