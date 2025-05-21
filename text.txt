@@ -1,0 +1,20 @@
+MULTIPLE SEQUENCE ALIGNMENT - CENTER STAR METHOD
+==================================================
+
+Parameters:
+Match score: 1
+Mismatch score: -1
+Gap penalty: -2
+
+Alignment:
+>123
+ACGCTCGCA
+>456
+ACGCTCGCA
+
+Statistics:
+Average identity: 92.59%
+Total matches: 25
+Total mismatches: 0
+Total gaps: 2
+Alignment length: 9
