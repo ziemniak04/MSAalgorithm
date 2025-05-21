@@ -11,6 +11,13 @@ class Sequence:
     """Class to represent a biological sequence."""
 
     def __init__(self, identifier: str, sequence: str):
+        """
+                Initialize a Sequence object with an identifier and sequence string.
+
+                Args:
+                    id (str): Unique identifier for the sequence.
+                    sequence (str): The biological sequence (e.g., DNA, RNA, or protein) as a string.
+                """
         self.identifier = identifier
         self.sequence = sequence.upper()
 

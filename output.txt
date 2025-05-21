@@ -1,5 +1,3 @@
-
-
 MULTIPLE SEQUENCE ALIGNMENT - CENTER STAR METHOD
 ==================================================
 
@@ -9,14 +7,14 @@ Mismatch score: -1
 Gap penalty: -2
 
 Alignment:
->123
-ACGCTCGCA
->456
-ACGCTCGCA
+>mammal
+ACGTACGTA
+>plant
+ACGTACGTA
 
 Statistics:
-Average identity: 92.59%
-Total matches: 25
-Total mismatches: 0
+Average identity: 70.37%
+Total matches: 19
+Total mismatches: 6
 Total gaps: 2
 Alignment length: 9
